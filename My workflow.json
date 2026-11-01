@@ -1,0 +1,283 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -896,
+        -912
+      ],
+      "id": "5febc5c2-a986-40de-9a8c-98b11ff02542",
+      "name": "Telegram Trigger",
+      "webhookId": "40c7cd6e-1bd9-46fd-bf8d-c52970e0a846",
+      "credentials": {
+        "telegramApi": {
+          "id": "cddqftcmVIZ0zVdF",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.item.json.message.text.trim();\n\n// Matches text followed by a space, a number, and an optional % symbol (e.g., \"Lenovo 10%\" or \"Lenovo 10\")\nconst match = text.match(/^(.*?)\\s+(\\d+)%?$/);\n\nif (!match) {\n  throw new Error(\"Invalid format! Send a message like: Lenovo 10%\");\n}\n\nreturn [{\n  json: {\n    productName: match[1].trim(),\n    percentage: parseFloat(match[2]),\n    chatId: $input.item.json.message.chat.id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        -912
+      ],
+      "id": "651386d2-3280-4972-a469-8603337d9c5c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1_fIlfWdhmDvEGS6EX5jNHbMfM4Y4yaWVFG-rQLhLSik",
+          "mode": "list",
+          "cachedResultName": "Price checker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_fIlfWdhmDvEGS6EX5jNHbMfM4Y4yaWVFG-rQLhLSik/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_fIlfWdhmDvEGS6EX5jNHbMfM4Y4yaWVFG-rQLhLSik/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -448,
+        -912
+      ],
+      "id": "056b27ff-9fb6-4746-a017-fa8d36bfd31b",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "V8CbnqS9nx5UrR1z",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsedData = $('Code in JavaScript').first().json;\nconst sheetRows = $('Get row(s) in sheet').all();\n\nlet currentPrice = 0;\nlet matchedProduct = \"\";\nlet found = false;\n\nsheetRows.forEach((row) => {\n  if (row.json.Product && row.json.Product.toLowerCase() === parsedData.productName.toLowerCase()) {\n    currentPrice = parseFloat(row.json[\"Current price\"]);\n    matchedProduct = row.json.Product;\n    found = true;\n  }\n});\n\nif (!found) {\n  throw new Error(`Product \"${parsedData.productName}\" not found in Google Sheet.`);\n}\n\nconst increaseAmount = currentPrice * (parsedData.percentage / 100);\nconst newPrice = currentPrice + increaseAmount;\nconst fullMessage = `${matchedProduct} ${parsedData.percentage}%`;\n\nreturn [{\n  json: {\n    productName: matchedProduct,\n    newPrice: newPrice,\n    percentage: parsedData.percentage,\n    messageText: fullMessage,\n    chatId: parsedData.chatId\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        -912
+      ],
+      "id": "ad32f5db-9c57-4a89-9e03-cf3b44a5f811",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1_fIlfWdhmDvEGS6EX5jNHbMfM4Y4yaWVFG-rQLhLSik",
+          "mode": "list",
+          "cachedResultName": "Price checker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_fIlfWdhmDvEGS6EX5jNHbMfM4Y4yaWVFG-rQLhLSik/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1_fIlfWdhmDvEGS6EX5jNHbMfM4Y4yaWVFG-rQLhLSik/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "New price": "={{ $json.newPrice }}",
+            "Product": "={{ $json.productName }}",
+            "Message": "={{ $json.messageText }}",
+            "Current price": "={{ $('Get row(s) in sheet').item.json['Current price'] }}"
+          },
+          "matchingColumns": [
+            "Product"
+          ],
+          "schema": [
+            {
+              "id": "Product",
+              "displayName": "Product",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Current price",
+              "displayName": "Current price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "New price",
+              "displayName": "New price",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        -912
+      ],
+      "id": "0a3cfdee-ca8a-4268-a241-7453fe6413bd",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "V8CbnqS9nx5UrR1z",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Code in JavaScript1').first().json.chatId }}",
+        "text": "={{ $('Code in JavaScript1').first().json.messageText }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        -912
+      ],
+      "id": "f54035fa-f614-4efb-bad6-b77fbfccfdf9",
+      "name": "Send a text message",
+      "webhookId": "393efaf6-fad5-455e-9d3c-ba22558a9d89",
+      "credentials": {
+        "telegramApi": {
+          "id": "cddqftcmVIZ0zVdF",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e452e10d-27f3-4886-aef4-c73ec2687fe2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "83895eb4d0bfd7cbd8e976c20e5749877772bd2232fee6926a90aee730a66efd"
+  },
+  "nodeGroups": [],
+  "id": "yv4fqAnPfwDoogqL",
+  "tags": []
+}
