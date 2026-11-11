@@ -1,0 +1,355 @@
+{
+  "name": "task 2",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6f2eb24f-9114-4771-9896-19cece38ca19",
+      "name": "Telegram Trigger",
+      "webhookId": "e58079b0-1fbf-411f-85bb-507397d4668b",
+      "credentials": {
+        "telegramApi": {
+          "id": "XMdhZe8OmcDB9skv",
+          "name": "Telegram account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "0e2a1de1-33a7-426c-bcc7-36cab106bcc0",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following student performance report and extract the details into a strict JSON object with no extra conversational text or markdown code blocks:\n\nReport Text:\n{{ $json.text }}\n\nRequired Output Format:\n{\n  \"student_name\": \"Student's Full Name\",\n  \"course_name\": \"Course Title\",\n  \"final_grade\": \"Overall Grade Percentage or Score\",\n  \"result_status\": \"Passed\" or \"Failed\"\n}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        448,
+        0
+      ],
+      "id": "68cbb85e-b9b0-4de7-9ec7-4175e5b0c7d8",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        384,
+        208
+      ],
+      "id": "b380c560-531f-492a-9021-5ba6ae95e37c",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "y0js0qR6MnTi019z",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1svg4l5E_nEHUXyCq8nX3FSqD1ttmhlpsqypdOUeugPI",
+          "mode": "list",
+          "cachedResultName": "Student Grade Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1svg4l5E_nEHUXyCq8nX3FSqD1ttmhlpsqypdOUeugPI/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1svg4l5E_nEHUXyCq8nX3FSqD1ttmhlpsqypdOUeugPI/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Student Name": "={{ $json.student_name }}",
+            "Course Name": "={{ $json.course_name }}",
+            "Final Grade": "={{ $json.final_grade }}",
+            "Result Status": "={{ $json.result_status }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Student Name",
+              "displayName": "Student Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Course Name",
+              "displayName": "Course Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Final Grade",
+              "displayName": "Final Grade",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Result Status",
+              "displayName": "Result Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1216,
+        64
+      ],
+      "id": "bd82ec0b-6078-44b1-82dd-f00c97f45a98",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Xnqy0rt1BnmqCSFY",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawText = $input.first().json.text;\n// Parse stringified JSON from LLM output\nconst cleanJson = JSON.parse(rawText.replace(/```json|```/g, '').trim());\nreturn [{ json: cleanJson }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        144
+      ],
+      "id": "10186aa7-90e5-4c70-a10c-530009444758",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "e79ca259-25cd-4533-92e6-6e520d9831cd",
+              "leftValue": "={{ $('Code in JavaScript').item.json.result_status }}",
+              "rightValue": "Passed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        1440,
+        64
+      ],
+      "id": "baa41bbb-b03d-478f-851f-17c72f580c06",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "sendTo": "david.j.z2002@gmail.com",
+        "subject": "=Congratulations  {{ $json['Student Name'] }} -   {{ $json['Course Name'] }}",
+        "message": "=Dear  {{ $json['Student Name'] }} Congratulations! You have successfully passed of{{ $json['Course Name'] }}\nBest regards,\n\nAcademic Administration",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1776,
+        -192
+      ],
+      "id": "552b3b5a-4a4e-4c9a-ad01-5c32ce3ca781",
+      "name": "Send a message",
+      "webhookId": "3bc681e1-aeb4-4f86-a829-d723edeb03df",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "V5euRbhRAyI2hySN",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "david.j.z2002@gmail.com",
+        "subject": "=Academic Notice:  {{ $('Append row in sheet').item.json['Student Name'] }}\nRetake Required",
+        "message": "=Dear {{ $('Append row in sheet').item.json['Student Name'] }},  This notice concerns your performance in {{ $('Append row in sheet').item.json['Course Name'] }} (Final Grade: {{ $('Append row in sheet').item.json['Final Grade'] }}).  Based on your score, a retake examination is required. Please contact academic support to schedule your retake.  Best regards,  Academic Support Team",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        192
+      ],
+      "id": "407a5659-5139-4ae0-9f9b-591291b69834",
+      "name": "Send a message1",
+      "webhookId": "ce7a40e7-65d7-44e3-97dd-a36f4e6b49b0",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "V5euRbhRAyI2hySN",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "00953c82-5471-4d3a-b815-83fb7b2ddd16",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ffadc6c94397ad2c61bbd81ede85ca2b5195bac7375e9a7ab5aeb5b00756e9ff"
+  },
+  "nodeGroups": [],
+  "id": "xK7qXm5yyUpX27fO",
+  "tags": []
+}
